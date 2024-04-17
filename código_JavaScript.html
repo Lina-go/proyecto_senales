@@ -1,0 +1,234 @@
+<!--Pagina web completa-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Lab 4</title>
+    <!-- Incluir la biblioteca Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Prueba Lab 4</h1>
+
+    <label for="FrecuenciaDeMuestreo"> Ingresa la frecuencia de muestreo de tu señal (Hz):</label>
+    <input type="number" id="FrecuenciaDeMuestreo" name="FrecuenciaDeMuestreo" step="1"  value="10" min="0">
+
+    <label for="TiempoVentana">Ingresa el tamaño de la ventana (s):</label>
+    <input type="number" id="TiempoVentana" name="TiempoVentana" step="1"  value="2" min="0">
+
+    <!-- Crear un canvas para la gráfica del ECG -->
+    <canvas id="ecgChart" width="300" height="100"></canvas>
+
+    <!-- Crear un canvas para la gráfica del tacograma -->
+    <canvas id="tacogramChart" width="300" height="100"></canvas>
+
+    <p>Latidos por minuto (BPM): <strong id="bpmDisplay"> valor </strong></p>
+  
+    <script>
+
+        // Definir la función para encontrar picos en una señal
+        function findPeaks(signal, threshold) {
+            var peaks = [];
+            for (var i = 1; i < signal.length - 1; i++) {
+                if (signal[i] > signal[i - 1] && signal[i] > signal[i + 1] && signal[i] > threshold) {
+                    peaks.push(i);
+                }
+            }
+            return peaks;
+        }
+
+        // Definir la función para generar una señal de ECG simulada
+        function generarECG(tiempo) {
+            // Generar la señal de ECG
+            var ecg = tiempo.map(t => Math.sin(2 * Math.PI * 1 * t) + 0.5 * Math.random());
+            return ecg;
+        }
+
+        // Definir la función para calcular los latidos por minuto (BPM)
+        function calcularBPM(intervalos) {
+            var bpm = 60 / (intervalos.reduce((acc, curr) => acc + curr, 0) / intervalos.length);
+            return Math.round(bpm);
+        }
+
+        // Función para mostrar los latidos por minuto (BPM) en la página web
+        function mostrarBPM(intervalosTacograma) {
+            var bpm = calcularBPM(intervalosTacograma);
+            var bpmElement = document.getElementById('bpmDisplay');
+            bpmElement.textContent = bpm;
+        }
+
+        // Función para verificar bradicardia o taquicardia
+        function verificarRitmoCardiaco(intervalosTacograma) {
+            var bpm = calcularBPM(intervalosTacograma);
+            if (bpm < 60) {
+                alert('¡Bradicardia detectada!\nLatidos por minuto: ' + bpm);
+            } else if (bpm > 100) {
+                alert('¡Taquicardia detectada!\nLatidos por minuto: ' + bpm);
+            }
+        }
+
+        function crearECGchart(){
+            // Destroy existing chart if it exists
+            if (ecgChart) {
+                ecgChart.destroy();
+            }
+
+            // Crear la gráfica del ECG
+            ecgChart = new Chart(ctxECG, {
+                type: 'line',
+                data: {
+                    labels: tiempo, // etiquetas para los puntos
+                    datasets: [{
+                        label: 'ECG Signal',
+                        data: ecgSignal, // Usar los datos de la señal simulada de ECG
+                        borderColor: 'blue',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { // xAxes se convierte en x en Chart.js 3.x
+                            title: {
+                                display: true,
+                                text: 'Tiempo (s)' // labelString se convierte en text en Chart.js 3.x
+                            }
+                        },
+                        y: { // yAxes se convierte en y en Chart.js 3.x
+                            title: {
+                                display: true,
+                                text: 'Amplitud' // labelString se convierte en text en Chart.js 3.x
+                            }
+                        }
+                    }
+                }
+            });}
+
+        function crearTacoChart(){
+            // Destroy existing chart if it exists
+            if (tacogramChart) {
+                tacogramChart.destroy();
+            }
+
+            // Crear la gráfica del tacograma
+            tacogramChart = new Chart(ctxTacogram, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: intervalosTacograma.length}, (_, i) => i ), // etiquetas para los puntos
+                    datasets: [{
+                        label: 'Tacogram',
+                        data: intervalosTacograma, // Usar los intervalos entre picos
+                        borderColor: 'green',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { // xAxes se convierte en x en Chart.js 3.x
+                            title: {
+                                display: true,
+                                text: 'Latido' // labelString se convierte en text en Chart.js 3.x
+                            }
+                        },
+                        y: { // yAxes se convierte en y en Chart.js 3.x
+                            title: {
+                                display: true,
+                                text: 'Intervalo (s)' // labelString se convierte en text en Chart.js 3.x
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        
+        function calculos(){
+            fs = fsInput.value;
+            ventana_tiempo = ventanaInput.value;
+            T = 1/fs; 
+            
+            // Generar vector de tiempo de 1000 puntos con valores de 0 a 1000*T
+            tiempo_completo = Array.from({length: 1000}, (_, i) => (i * T).toFixed(2));
+
+            // Generar el vector simulado de ECG
+            var ecgSignal_simulada = generarECG(tiempo_completo);
+
+            // Calcular el tamaño de la ventana en muestras
+            var ventana_tamaño = ventana_tiempo * fs;
+
+            tiempo = tiempo_completo.slice(0, ventana_tamaño);
+            ecgSignal = ecgSignal_simulada.slice(0, ventana_tamaño);
+
+            // Encontrar los picos en la señal de ECG simulada
+            peaks = findPeaks(ecgSignal, threshold);
+
+            // Calcular los intervalos entre picos para el tacograma
+            
+            for (var i = 1; i < peaks.length; i++) {
+                intervalosTacograma.push((peaks[i] - peaks[i - 1]) / 100); // Se divide por 100 para obtener el tiempo en segundos
+            }
+
+            // Crear la gráfica del ECG
+            crearECGchart();
+
+            // Mostrar los latidos por minuto (BPM) en la página web
+            mostrarBPM(intervalosTacograma);
+
+            // Verificar bradicardia o taquicardia
+            verificarRitmoCardiaco(intervalosTacograma);
+
+            // Crear la gráfica del tacograma
+            crearTacoChart();
+
+        }
+
+        var fs = 250; // frecuencia de muestreo
+        var T = 1/fs; // periodo entre muestras
+        var tiempo = []; // vector de tiempo
+        var ventana_tiempo = 2; // tamaño de ventana
+        var ecgChart; // variable para guardar la gráfica del ECG
+        var tacogramChart; // variable para guardar la gráfica del tacograma
+        var peaks; // variable para guardar los picos de la señal de ECG
+        var threshold = 0.5; // Umbral para considerar un pico
+        var intervalosTacograma = []; // vector para guardar los intervalos entre picos
+
+        // Obtener el canvas de la gráfica del ECG
+        var ctxECG = document.getElementById('ecgChart').getContext('2d');
+        // Obtener el canvas de la gráfica del tacograma
+        var ctxTacogram = document.getElementById('tacogramChart').getContext('2d');
+
+        // Obtener la frecuencia de muestreo y tamaño de ventana del input en el HTML
+        var fsInput = document.getElementById('FrecuenciaDeMuestreo');
+        fsInput.addEventListener('change', calculos);
+        var ventanaInput = document.getElementById('TiempoVentana');
+        ventanaInput.addEventListener('change', calculos);
+
+        //window.onload = calculos();
+        calculos();
+
+        console.log("Frecuencia de muestreo:", fs);
+        console.log("Intervalo de tiempo entre muestras:", T);
+        console.log("Tamaño de ventana:", ventana_tiempo);
+        console.log("Índices de picos encontrados:", peaks);
+        console.log("Intervalos entre picos (Tacograma):", intervalosTacograma);
+        
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
