@@ -25,7 +25,6 @@
     <script>
 
         // Función para calcular los picos
-        
         function findPeaks(signal, threshold) {
             var peaks = [];
             for (var i = 1; i < signal.length - 1; i++) {
@@ -40,7 +39,11 @@
         function calcularIntervalosTacograma(peaks) {        
             intervalosTacograma = [];
             for (var i = 1; i < peaks.length; i++) {
-                intervalosTacograma.push((peaks[i] - peaks[i - 1]) / 1000); // Se divide por 1000 para obtener el tiempo en segundos
+                // Se multiplica por T para obtener el intervalo en segundos
+                // T es el tiempo transcurrido entre muestras
+                let intervalo = (peaks[i] - peaks[i - 1])*T;
+                //Guardar el intervalo en el vector
+                intervalosTacograma.push(intervalo); 
             }
             return intervalosTacograma;
         }
@@ -147,7 +150,8 @@
         async function requestECG() {
             let ecgData = null;
             let timeStamp = null;
-            const response = await fetch('http://192.168.11.20:5005/'); //TODO: Cambiar por la dirección IP:puerto del servidor de arduino
+            //TODO: Cambiar por la dirección IP:PUERTO del servidor de arduino
+            const response = await fetch('http://192.168.11.20:5005/'); 
             if (response.ok) {
                 ecgData = await response.text();
                 timeStamp = new Date();     

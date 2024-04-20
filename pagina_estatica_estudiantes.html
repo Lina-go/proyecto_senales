@@ -4,64 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba Lab 4</title>
+    <title>Prueba Lab 4 - Estudiantes</title>
     <!-- Incluir la biblioteca Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: auto;
-            padding-top: 55px;
-        }
-
-        .banner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: #B1B1B1; /* A nice gray color */
-            color: white;
-            padding: 10px 20px;
-            font-size: 24px;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 70px; 
-            flex-direction: column; /* stack items vertically */
-        }
-
-        .banner-top {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .banner-logo {
-            height: 30px; 
-            margin-right: 20px;
-        }
-
-        .banner-text {
-            font-size: 18px;
-            line-height: 1.2;
-        }
-
-    </style>
 </head>
 <body>
-    <div class="banner">
-        <div class="banner-top">
-            <img class="banner-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/University_of_Los_Andes_logo.svg/640px-University_of_Los_Andes_logo.svg.png" alt="Logo Uniandes">
-            <span>Prueba Lab 4</span>
-        </div>
-        <div class="banner-text">
-            <p>Latidos por minuto (BPM): <strong id="bpmDisplay">valor</strong></p>
-        </div>
+  
+    </div>
+        <h1>Prueba Lab 4</h1>  
+        <img class="banner-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/University_of_Los_Andes_logo.svg/640px-University_of_Los_Andes_logo.svg.png" alt="Logo Uniandes" height="100">
+        <p>Latidos por minuto (BPM): <strong id="bpmDisplay">valor</strong></p>
     </div>
    
     <label for="FrecuenciaDeMuestreo">Ingresa la frecuencia de muestreo de tu señal (Hz):</label>
@@ -79,54 +32,36 @@
     <script>
         // Función para generar una señal de ECG simulada
         function generarECG(tiempo) {
-            // Generar la señal de ECG
-            var ecg = tiempo.map(t => Math.sin(2 * Math.PI * 1 * t) + 0.5 * Math.random());
-            return ecg;
+            //TODO: COMPLETAR
+            return ecgSignal;
         }
 
         // Función para encontrar picos en una señal
         function findPeaks(signal, threshold) {
-            var peaks = [];
-            for (var i = 1; i < signal.length - 1; i++) {
-                if (signal[i] > signal[i - 1] && signal[i] > signal[i + 1] && signal[i] > threshold) {
-                    peaks.push(i);
-                }
-            }
+            // TODO: COMPLETAR
             return peaks;
         }
 
         // Función para calcular los intervalos entre picos para el tacograma
         function calcularIntervalosTacograma(peaks) {
-            intervalosTacograma = [];
-            for (var i = 1; i < peaks.length; i++) {
-            // Se multiplica por T para obtener el intervalo en segundos
-            // T es el tiempo transcurrido entre muestras
-            let intervalo = (peaks[i] - peaks[i - 1])*T;
-            //Guardar el intervalo en el vector
-            intervalosTacograma.push(intervalo); 
-            } return intervalosTacograma;
-        }
+            // TODO: COMPLETAR
+            return intervalosTacograma;
+        } 
 
         // Función para calcular los latidos por minuto (BPM)
         function calcularBPM(intervalos) {
-            var bpm = 60 / (intervalos.reduce((acc, curr) => acc + curr, 0) / intervalos.length);
-            return Math.round(bpm);
+            // TODO: COMPLETAR
+            return bpm;
         }
 
         // Función para mostrar los latidos por minuto (BPM) en la página web
         function mostrarBPM(bpm) {    
-            var bpmElement = document.getElementById('bpmDisplay');
-            bpmElement.textContent = bpm;
+            // TODO: COMPLETAR
         }
 
         // Función para verificar bradicardia o taquicardia
         function verificarRitmoCardiaco(intervalosTacograma) {
-            var bpm = calcularBPM(intervalosTacograma);
-            if (bpm < 60) {
-                alert('¡Bradicardia detectada!\nLatidos por minuto: ' + bpm);
-            } else if (bpm > 100) {
-                alert('¡Taquicardia detectada!\nLatidos por minuto: ' + bpm);
-            }
+           // TODO: COMPLETAR
         }
 
         // Función para crear la gráfica del ECG en el canvas
@@ -208,15 +143,14 @@
 
         // Función para cambiar el tamaño de la ventana
         function graficar_tamano_ventana(){
-            // Calcular el tamaño de la ventana en muestras
-            var ventana_tamaño = ventana_tiempo * fs;
+            // TODO: COMPLETAR
 
-            tiempo_slice = tiempo.slice(0, ventana_tamaño);
-            ecgSignal_slice = ecgSignal.slice(0, ventana_tamaño);
-            intervalosTacograma_slice = intervalosTacograma.slice(0, ventana_tamaño);
+            tiempo_slice = [];
+            ecgSignal_slice = [];
+            intervalosTacograma_slice = [];
 
-             // Crear la gráfica del ECG
-             crearECGchart();
+            // Crear la gráfica del ECG
+            crearECGchart();
 
             // Crear la gráfica del tacograma
             crearTacoChart();
@@ -244,7 +178,6 @@
             // Mostrar los latidos por minuto (BPM) en la página web
             mostrarBPM(bpm);
 
-            // Función que se encarga de graficar de acuerdo al tamaño de la ventana
             graficar_tamano_ventana();
 
             // Verificar bradicardia o taquicardia
@@ -284,18 +217,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

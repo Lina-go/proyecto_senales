@@ -3,19 +3,16 @@
 #include <Wire.h>
 
 // Replace with your network credentials
-//const char* ssid = "Male";
-//const char* password = "mariaperez267";
-
 const char* ssid = "RAFA CORONADO_2.4GHz";
 const char* password = "2326101026";
 
-#define pin_touch 15
+//#define pin_lectura 15
  
 ESP8266WebServer server(5005);  // Create a webserver object that listens for HTTP request on port 5005
 
 String readPin() {
-  // Read value from touch PIN
-  //float reading_sensor = analogRead(pin_touch);
+  // Read value from PIN
+  //float reading_sensor = analogRead(pin_lectura);
   //float voltage_sensor = reading_sensor * (3.3/(pow(2,10)-1));
   float voltage_sensor =  random(1023)*(3.3/(pow(2,10)-1));
 
@@ -31,27 +28,14 @@ String readPin() {
 void setup() {
  
   Serial.begin(115200);
+  //pinMode(pin_lectura, INPUT_PULLUP);
   randomSeed(1);
   delay(1000);
   
- WiFi.begin(ssid, password);
+  WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.print("Connecting to WiFi..");
-    switch (WiFi.status()) {
-      case WL_NO_SSID_AVAIL:
-        Serial.println("No SSID available");
-        break;
-      case WL_CONNECT_FAILED:
-        Serial.println("Connection failed");
-        break;
-      case WL_DISCONNECTED:
-        Serial.println("Disconnected");
-        break;
-      default:
-        Serial.println("Unknown error");
-        break;
-    }
   }
  
   Serial.println("Connected to the WiFi network");
