@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba Lab 4</title>
+    <title>Prueba Lab 4 - En Vivo</title>
     <!-- Incluir la biblioteca Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -12,7 +12,7 @@
     <h1>Prueba Lab 4</h1>
 
     <label for="TiempoVentana">Ingresa el tamaño de la ventana (s):</label>
-    <input type="number" id="TiempoVentana" name="TiempoVentana" step="1"  value="2" min="0">
+    <input type="number" id="TiempoVentana" name="TiempoVentana" step="1"  value="20" min="0">
 
     <!-- Crear un canvas para la gráfica del ECG -->
     <canvas id="ecgChart" width="300" height="100"></canvas>
@@ -25,13 +25,14 @@
     <script>
 
         // Función para calcular los picos
-        function findPeaks(ecgSignal) {
-            peaks = [];
-            for (let i = 1; i < ecgSignal.length; i++) {
-                if (i > 0 && i < ecgSignal.length - 1 && ecgSignal[i] > ecgSignal[i - 1] && ecgSignal[i] > ecgSignal[i + 1]) {
+        
+        function findPeaks(signal, threshold) {
+            var peaks = [];
+            for (var i = 1; i < signal.length - 1; i++) {
+                if (signal[i] > signal[i - 1] && signal[i] > signal[i + 1] && signal[i] > threshold) {
                     peaks.push(i);
                 }
-            } 
+            }
             return peaks;
         }
 
@@ -146,11 +147,10 @@
         async function requestECG() {
             let ecgData = null;
             let timeStamp = null;
-            const response = await fetch('http://192.168.10.35:5005'); //TODO: Cambiar por la dirección IP del servidor de arduino
+            const response = await fetch('http://192.168.11.20:5005/'); //TODO: Cambiar por la dirección IP:puerto del servidor de arduino
             if (response.ok) {
-                const response_json = await response.json();
-                ecgData = response_json.data;
-                timeStamp = new Date(); 
+                ecgData = await response.text();
+                timeStamp = new Date();     
             } else {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -168,14 +168,10 @@
 
             console.log("Datos de ECG:", ecgData);
             console.log("Tiempo:", time);
-
+ 
             ecgSignal.push(ecgData);  // Guardar los datos de ECG en un array
             tiempo.push(time); // Guardar el tiempo en un array
             tiempo_labels.push(time.toTimeString().split(' ')[0])
-
-            if (ecgSignal.length < 3) {
-                return;
-            }
 
             // Encontrar los picos en la señal de ECG simulada
             peaks = findPeaks(ecgSignal, threshold);
@@ -183,7 +179,7 @@
             
             // Calcular los intervalos entre picos para el tacograma
             intervalosTacograma = calcularIntervalosTacograma(peaks);
-            //console.log("Intervalos entre picos:", intervalosTacograma);
+            console.log("Intervalos entre picos:", intervalosTacograma);
 
             // Calcular los latidos por minuto (BPM)
             var bpm = calcularBPM(intervalosTacograma);
@@ -191,8 +187,8 @@
 
             graficar_tamaño_ventana();
          
-            // Verificar bradicardia o taquicardia
-            // verificarRitmoCardiaco(intervalosTacograma);
+            //Verificar bradicardia o taquicardia
+            //verificarRitmoCardiaco(intervalosTacograma);
         }
 
         function graficar_tamaño_ventana(){
@@ -220,7 +216,7 @@
             crearTacoChart();
         }
 
-        var T = 2500; // periodo entre muestras(ms)
+        var T = 1000; // periodo entre muestras(ms)
         var fs = 1/(T/1000); // frecuencia de muestreo (Hz)
         var ventana_tiempo = 2; // tamaño de ventana (s)
 
@@ -248,8 +244,8 @@
         // Procesar los datos de ECG cada T ms
         setInterval(procesamiento, T);
 
-        console.log("Frecuencia de muestreo:", fs);
-        console.log("Intervalo de tiempo entre muestras:", T);
+        console.log("Frecuencia de muestreo (Hz):", fs);
+        console.log("Intervalo de tiempo entre muestras (ms):", T);
         
     </script>
 </body>

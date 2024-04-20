@@ -3,8 +3,11 @@
 #include <Wire.h>
 
 // Replace with your network credentials
-const char* ssid = "5-701";
-const char* password = "naviquer159";
+//const char* ssid = "Male";
+//const char* password = "mariaperez267";
+
+const char* ssid = "RAFA CORONADO_2.4GHz";
+const char* password = "2326101026";
 
 #define pin_touch 15
  
@@ -31,18 +34,34 @@ void setup() {
   randomSeed(1);
   delay(1000);
   
-  WiFi.begin(ssid, password);
+ WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.println("Connecting to WiFi..");
+    Serial.print("Connecting to WiFi..");
+    switch (WiFi.status()) {
+      case WL_NO_SSID_AVAIL:
+        Serial.println("No SSID available");
+        break;
+      case WL_CONNECT_FAILED:
+        Serial.println("Connection failed");
+        break;
+      case WL_DISCONNECTED:
+        Serial.println("Disconnected");
+        break;
+      default:
+        Serial.println("Unknown error");
+        break;
+    }
   }
  
   Serial.println("Connected to the WiFi network");
   Serial.println(WiFi.localIP());
- 
-  server.on("/", HTTP_GET, [](){     // Define the handling function for the path "/"
+
+  server.on("/", HTTP_GET, []() { // Si se recibe una petición GET a la raíz del servidor, se ejecuta la función
+    server.sendHeader("Access-Control-Allow-Origin", "*"); 
+    server.sendHeader("Access-Control-Allow-Methods", "GET"); // Podemos poder POST, etc 
     server.send(200, "text/plain", readPin());
-  });
+    });
   
   server.begin();                  // Start the HTTP Server
 }
@@ -51,6 +70,3 @@ void loop() {
    server.handleClient();            // Handle any incoming client requests
    delay(10);
 }
-  
- 
-

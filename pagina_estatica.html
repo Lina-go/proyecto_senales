@@ -7,15 +7,68 @@
     <title>Prueba Lab 4</title>
     <!-- Incluir la biblioteca Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: auto;
+            padding-top: 55px;
+        }
+
+        .banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #B1B1B1; /* A nice gray color */
+            color: white;
+            padding: 10px 20px;
+            font-size: 24px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 70px; 
+            flex-direction: column; /* stack items vertically */
+        }
+
+        .banner-top {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .banner-logo {
+            height: 30px; 
+            margin-right: 20px;
+        }
+
+        .banner-text {
+            font-size: 18px;
+            line-height: 1.2;
+        }
+
+    </style>
 </head>
 <body>
-    <h1>Prueba Lab 4</h1>
-
-    <label for="FrecuenciaDeMuestreo"> Ingresa la frecuencia de muestreo de tu señal (Hz):</label>
-    <input type="number" id="FrecuenciaDeMuestreo" name="FrecuenciaDeMuestreo" step="1"  value="10" min="0">
-
+    <div class="banner">
+        <div class="banner-top">
+            <img class="banner-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/University_of_Los_Andes_logo.svg/640px-University_of_Los_Andes_logo.svg.png" alt="Logo Uniandes">
+            <span>Prueba Lab 4</span>
+        </div>
+        <div class="banner-text">
+            <p>Latidos por minuto (BPM): <strong id="bpmDisplay">valor</strong></p>
+        </div>
+    </div>
+   
+    <label for="FrecuenciaDeMuestreo">Ingresa la frecuencia de muestreo de tu señal (Hz):</label>
+    <input type="number" id="FrecuenciaDeMuestreo" name="FrecuenciaDeMuestreo" step="1"  value="15" min="0">
+    <br/>
     <label for="TiempoVentana">Ingresa el tamaño de la ventana (s):</label>
-    <input type="number" id="TiempoVentana" name="TiempoVentana" step="1"  value="2" min="0">
+    <input type="number" id="TiempoVentana" name="TiempoVentana" step="1"  value="10" min="0">
 
     <!-- Crear un canvas para la gráfica del ECG -->
     <canvas id="ecgChart" width="300" height="100"></canvas>
@@ -23,8 +76,6 @@
     <!-- Crear un canvas para la gráfica del tacograma -->
     <canvas id="tacogramChart" width="300" height="100"></canvas>
 
-    <p>Latidos por minuto (BPM): <strong id="bpmDisplay"> valor </strong></p>
-  
     <script>
 
         // Función para encontrar picos en una señal
@@ -153,11 +204,11 @@
         
         function calculos(){
             fs = fsInput.value; // frecuencia de muestreo: cantidad de muestras por segundo
-            ventana_tiempo = ventanaInput.value;
             T = 1/fs; // periodo entre muestras
+            ventana_tiempo = ventanaInput.value; // tamaño de ventana en segundos
             
-            // Generar vector de tiempo de 1000 puntos con valores de 0 a 1000*T
-            tiempo_completo = Array.from({length: 1000}, (_, i) => (i * T).toFixed(2));
+            // Generar vector de tiempo de 5000 puntos con valores de 0 a 1000*T
+            tiempo_completo = Array.from({length: 5000}, (_, i) => (i * T).toFixed(2));
 
             // Generar el vector simulado de ECG
             var ecgSignal_simulada = generarECG(tiempo_completo);
@@ -200,10 +251,10 @@
         var threshold = 0.5; // Umbral para considerar un pico
         var intervalosTacograma = []; // vector para guardar los intervalos entre picos
 
-        // Obtener el canvas de la gráfica del ECG
-        var ctxECG = document.getElementById('ecgChart').getContext('2d');
-        // Obtener el canvas de la gráfica del tacograma
-        var ctxTacogram = document.getElementById('tacogramChart').getContext('2d');
+        var ecgChart; // variable para guardar la gráfica del ECG
+        var ctxECG = document.getElementById('ecgChart').getContext('2d'); // canvas de la gráfica del ECG
+        var tacogramChart; // variable para guardar la gráfica del tacograma
+        var ctxTacogram = document.getElementById('tacogramChart').getContext('2d'); // canvas de la gráfica del tacograma
 
         // Obtener la frecuencia de muestreo y tamaño de ventana del input en el HTML
         var fsInput = document.getElementById('FrecuenciaDeMuestreo');
@@ -211,7 +262,6 @@
         var ventanaInput = document.getElementById('TiempoVentana');
         ventanaInput.addEventListener('change', calculos);
 
-        //window.onload = calculos();
         calculos();
 
         console.log("Frecuencia de muestreo:", fs);
