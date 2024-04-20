@@ -27,7 +27,7 @@
   
     <script>
 
-        // Definir la función para encontrar picos en una señal
+        // Función para encontrar picos en una señal
         function findPeaks(signal, threshold) {
             var peaks = [];
             for (var i = 1; i < signal.length - 1; i++) {
@@ -38,24 +38,31 @@
             return peaks;
         }
 
-        // Definir la función para generar una señal de ECG simulada
+        // Función para generar una señal de ECG simulada
         function generarECG(tiempo) {
             // Generar la señal de ECG
             var ecg = tiempo.map(t => Math.sin(2 * Math.PI * 1 * t) + 0.5 * Math.random());
             return ecg;
         }
 
-        // Definir la función para calcular los latidos por minuto (BPM)
+        // Función para calcular los latidos por minuto (BPM)
         function calcularBPM(intervalos) {
             var bpm = 60 / (intervalos.reduce((acc, curr) => acc + curr, 0) / intervalos.length);
             return Math.round(bpm);
         }
 
         // Función para mostrar los latidos por minuto (BPM) en la página web
-        function mostrarBPM(intervalosTacograma) {
-            var bpm = calcularBPM(intervalosTacograma);
+        function mostrarBPM(bpm) {    
             var bpmElement = document.getElementById('bpmDisplay');
             bpmElement.textContent = bpm;
+        }
+
+        // Función para calcular los intervalos entre picos para el tacograma
+        function calcularIntervalosTacograma(peaks) {
+            intervalosTacograma = [];
+            for (var i = 1; i < peaks.length; i++) {
+            intervalosTacograma.push((peaks[i] - peaks[i - 1]) / 100); // Se divide por 100 para obtener el tiempo en segundos
+            } return intervalosTacograma;
         }
 
         // Función para verificar bradicardia o taquicardia
@@ -126,16 +133,16 @@
                 },
                 options: {
                     scales: {
-                        x: { // xAxes se convierte en x en Chart.js 3.x
+                        x: { 
                             title: {
                                 display: true,
-                                text: 'Latido' // labelString se convierte en text en Chart.js 3.x
+                                text: 'Latido' 
                             }
                         },
-                        y: { // yAxes se convierte en y en Chart.js 3.x
+                        y: {
                             title: {
                                 display: true,
-                                text: 'Intervalo (s)' // labelString se convierte en text en Chart.js 3.x
+                                text: 'Intervalo (s)'
                             }
                         }
                     }
@@ -145,9 +152,9 @@
 
         
         function calculos(){
-            fs = fsInput.value;
+            fs = fsInput.value; // frecuencia de muestreo: cantidad de muestras por segundo
             ventana_tiempo = ventanaInput.value;
-            T = 1/fs; 
+            T = 1/fs; // periodo entre muestras
             
             // Generar vector de tiempo de 1000 puntos con valores de 0 a 1000*T
             tiempo_completo = Array.from({length: 1000}, (_, i) => (i * T).toFixed(2));
@@ -165,22 +172,21 @@
             peaks = findPeaks(ecgSignal, threshold);
 
             // Calcular los intervalos entre picos para el tacograma
-            
-            for (var i = 1; i < peaks.length; i++) {
-                intervalosTacograma.push((peaks[i] - peaks[i - 1]) / 100); // Se divide por 100 para obtener el tiempo en segundos
-            }
+            intervalosTacograma = calcularIntervalosTacograma(peaks);
+
+            var bpm = calcularBPM(intervalosTacograma);
+
+            // Mostrar los latidos por minuto (BPM) en la página web
+            mostrarBPM(bpm);
 
             // Crear la gráfica del ECG
             crearECGchart();
 
-            // Mostrar los latidos por minuto (BPM) en la página web
-            mostrarBPM(intervalosTacograma);
+            // Crear la gráfica del tacograma
+            crearTacoChart();
 
             // Verificar bradicardia o taquicardia
             verificarRitmoCardiaco(intervalosTacograma);
-
-            // Crear la gráfica del tacograma
-            crearTacoChart();
 
         }
 

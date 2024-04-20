@@ -1,0 +1,271 @@
+<!--Pagina web completa-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Lab 4</title>
+    <!-- Incluir la biblioteca Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Prueba Lab 4</h1>
+
+    <label for="TiempoVentana">Ingresa el tamaño de la ventana (s):</label>
+    <input type="number" id="TiempoVentana" name="TiempoVentana" step="1"  value="2" min="0">
+
+    <!-- Crear un canvas para la gráfica del ECG -->
+    <canvas id="ecgChart" width="300" height="100"></canvas>
+
+    <!-- Crear un canvas para la gráfica del tacograma -->
+    <canvas id="tacogramChart" width="300" height="100"></canvas>
+
+    <p>Latidos por minuto (BPM): <strong id="bpmDisplay"> valor </strong></p>
+  
+    <script>
+
+        // Función para calcular los picos
+        function findPeaks(ecgSignal) {
+            peaks = [];
+            for (let i = 1; i < ecgSignal.length; i++) {
+                if (i > 0 && i < ecgSignal.length - 1 && ecgSignal[i] > ecgSignal[i - 1] && ecgSignal[i] > ecgSignal[i + 1]) {
+                    peaks.push(i);
+                }
+            } 
+            return peaks;
+        }
+
+        // Función para calcular los intervalos entre picos para el tacograma
+        function calcularIntervalosTacograma(peaks) {        
+            intervalosTacograma = [];
+            for (var i = 1; i < peaks.length; i++) {
+                intervalosTacograma.push((peaks[i] - peaks[i - 1]) / 1000); // Se divide por 1000 para obtener el tiempo en segundos
+            }
+            return intervalosTacograma;
+        }
+
+        // Definir la función para calcular los latidos por minuto (BPM)
+        function calcularBPM(intervalos) {
+            var bpm = 60 / (intervalos.reduce((acc, curr) => acc + curr, 0) / intervalos.length);
+            return Math.round(bpm);
+        }
+
+        // Función para mostrar los latidos por minuto (BPM) en la página web
+        function mostrarBPM(bpm) {
+            var bpmElement = document.getElementById('bpmDisplay');
+            bpmElement.textContent = bpm;
+        }
+
+        // Función para verificar bradicardia o taquicardia
+        function verificarRitmoCardiaco(intervalosTacograma) {
+            var bpm = calcularBPM(intervalosTacograma);
+            if (bpm < 60) {
+                alert('¡Bradicardia detectada!\nLatidos por minuto: ' + bpm);
+            } else if (bpm > 100) {
+                alert('¡Taquicardia detectada!\nLatidos por minuto: ' + bpm);
+            }
+        }
+
+        function crearECGchart(){
+            // Destroy existing chart if it exists
+            if (ecgChart) {
+                ecgChart.destroy();
+            }
+
+            // Crear la gráfica del ECG
+            ecgChart = new Chart(ctxECG, {
+                type: 'line',
+                data: {
+                    labels: tiempo_labels_slice , // etiquetas para los puntos
+                    datasets: [{
+                        label: 'ECG Signal',
+                        data: ecgSignal_slice, // Se usa la señal de ECG
+                        borderColor: 'blue',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { 
+                            title: {
+                                display: true,
+                                text: 'Tiempo (s)' 
+                            }
+                        },
+                        y: { 
+                            title: {
+                                display: true,
+                                text: 'Amplitud' 
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function crearTacoChart(){
+            // Destroy existing chart if it exists
+            if (tacogramChart) {
+                tacogramChart.destroy();
+            }
+
+            // Crear la gráfica del tacograma
+            tacogramChart = new Chart(ctxTacogram, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: intervalosTacograma_slice.length}, (_, i) => i ), // etiquetas para los puntos
+                    datasets: [{
+                        label: 'Tacogram',
+                        data: intervalosTacograma_slice, // Usar los intervalos entre picos
+                        borderColor: 'green',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { // xAxes se convierte en x en Chart.js 3.x
+                            title: {
+                                display: true,
+                                text: 'Latido' // labelString se convierte en text en Chart.js 3.x
+                            }
+                        },
+                        y: { // yAxes se convierte en y en Chart.js 3.x
+                            title: {
+                                display: true,
+                                text: 'Intervalo (s)' // labelString se convierte en text en Chart.js 3.x
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Función para recibir datos de ECG de un servidor
+        async function requestECG() {
+            let ecgData = null;
+            let timeStamp = null;
+            const response = await fetch('http://192.168.10.35:5005'); //TODO: Cambiar por la dirección IP del servidor de arduino
+            if (response.ok) {
+                const response_json = await response.json();
+                ecgData = response_json.data;
+                timeStamp = new Date(); 
+            } else {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return {"data": ecgData, "time": timeStamp};  // Retornar los datos de ECG y el tiempo
+        }
+        
+        async function procesamiento(){
+            let result = await requestECG(); // Obtener los datos de ECG del servidor
+            let ecgData = result.data;
+            let time = result.time;
+
+            if (ecgData == null || time == null) {
+                return;
+            }
+
+            console.log("Datos de ECG:", ecgData);
+            console.log("Tiempo:", time);
+
+            ecgSignal.push(ecgData);  // Guardar los datos de ECG en un array
+            tiempo.push(time); // Guardar el tiempo en un array
+            tiempo_labels.push(time.toTimeString().split(' ')[0])
+
+            if (ecgSignal.length < 3) {
+                return;
+            }
+
+            // Encontrar los picos en la señal de ECG simulada
+            peaks = findPeaks(ecgSignal, threshold);
+            //console.log("Índices de picos encontrados:", peaks);
+            
+            // Calcular los intervalos entre picos para el tacograma
+            intervalosTacograma = calcularIntervalosTacograma(peaks);
+            //console.log("Intervalos entre picos:", intervalosTacograma);
+
+            // Calcular los latidos por minuto (BPM)
+            var bpm = calcularBPM(intervalosTacograma);
+            mostrarBPM(bpm); // Mostrar bpm en la página web
+
+            graficar_tamaño_ventana();
+         
+            // Verificar bradicardia o taquicardia
+            // verificarRitmoCardiaco(intervalosTacograma);
+        }
+
+        function graficar_tamaño_ventana(){
+            // Obtener el tamaño de la ventana del input en el HTML
+            ventana_tiempo = parseInt(document.getElementById('TiempoVentana').value);
+            console.log("Tamaño de ventana:", ventana_tiempo);
+            // Calcular el tamaño de la ventana en muestras
+            ventana_tamaño = ventana_tiempo * fs;
+
+            // Actualizar los datos de tiempo, señal de ECG y intervalos de tacograma
+            if (tiempo.length > ventana_tamaño) {
+                tiempo_labels_slice = tiempo_labels.slice(-ventana_tamaño);
+                ecgSignal_slice = ecgSignal.slice(-ventana_tamaño);
+                intervalosTacograma_slice = intervalosTacograma.slice(-ventana_tamaño);
+            } else {
+                tiempo_labels_slice = tiempo_labels;
+                ecgSignal_slice = ecgSignal;
+                intervalosTacograma_slice = intervalosTacograma;
+            }
+
+            // Crear la gráfica del ECG
+            crearECGchart();
+
+            // Crear la gráfica del tacograma
+            crearTacoChart();
+        }
+
+        var T = 2500; // periodo entre muestras(ms)
+        var fs = 1/(T/1000); // frecuencia de muestreo (Hz)
+        var ventana_tiempo = 2; // tamaño de ventana (s)
+
+        var tiempo = []; // vector de tiempo
+        var tiempo_labels = []; // vector de tiempo en formato string para las etiquetas de la gráfica
+        var ecgSignal = []; // vector de señal de ECG
+        var peaks = []; // vector para guardar los picos de la señal de ECG
+        var threshold = 0.5; // Umbral para considerar un pico
+        var intervalosTacograma = []; // vector para guardar los intervalos entre picos
+
+        var ventana_tamaño = ventana_tiempo * fs;
+        var tiempo_labels_slice = [];
+        var ecgSignal_slice = [];
+        var intervalosTacograma_slice = [];
+
+        var ecgChart; // variable para guardar la gráfica del ECG
+        var ctxECG = document.getElementById('ecgChart').getContext('2d'); // canvas de la gráfica del ECG
+        var tacogramChart; // variable para guardar la gráfica del tacograma
+        var ctxTacogram = document.getElementById('tacogramChart').getContext('2d'); // canvas de la gráfica del tacograma
+
+        // Actualizar grafica de acuerdo al tamaño de ventana del input en el HTML
+        var ventanaInput = document.getElementById('TiempoVentana');
+        ventanaInput.addEventListener('change', graficar_tamaño_ventana());
+
+        // Procesar los datos de ECG cada T ms
+        setInterval(procesamiento, T);
+
+        console.log("Frecuencia de muestreo:", fs);
+        console.log("Intervalo de tiempo entre muestras:", T);
+        
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
